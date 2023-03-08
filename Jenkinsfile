@@ -5,9 +5,6 @@ pipeline {
         pollSCM('*/3 * * * *')
     }
 
-    //==============================================================
-    // 환경 변수 세팅
-    //==============================================================
     environment {
         AWS_ACCESS_KEY_ID = credentials('awsAccessKeyId')
         AWS_SECRET_ACCESS_KEY = credentials('awsSecretAccessKey')
@@ -16,9 +13,6 @@ pipeline {
     }
 
     stages {
-      //==============================================================
-      // 빌드 전 준비
-      //==============================================================
       stage('Prepare'){
         agent any
 
@@ -26,14 +20,12 @@ pipeline {
           echo "Lets start Long Journey! ENV: ${ENV}"
           echo "Clonning Repository.."
           
-          // git plugin need
-          git url: 'https://github.com/kimwlsgh33/fa-frontend',
+          git url: 'https://github.com/kimwlsgh33/test-jenkins',
               branch: 'main',
-              credentialsId: 'github_user' // jenkins credentials
+              credentialsId: 'github_user'
         }
 
         post {
-          // slack & email ...
           success {
             echo "Successfully Cloned Repository"
           }
@@ -50,7 +42,7 @@ pipeline {
 
       stage('Only for production'){
         when {
-          branch 'production' // branch check
+          branch 'production' 
           environment name: 'APP_ENV', value: 'prod'
           anyOf {
             environment name: "DEPLOY_TO", value: 'production'
@@ -58,15 +50,9 @@ pipeline {
           }
         }
       }
-
-      //==============================================================
-      // aws s3 deploy
-      //==============================================================
       stage('Deploy Frontend'){
         steps {
           echo "Deploying Frontend"
-          // 폴더 내부로 이동후, 명령 실행
-          // Lint 작업진행 필요?
           dir ('./website'){
             sh '''
             aws s3 sync ./ s3://jenkins-test
@@ -78,7 +64,7 @@ pipeline {
           success {
             echo "Successfully Cloned Repository"
 
-            mail  to: "logosevens@gmail.com", // 보낼사람 credential 등록 필요
+            mail  to: "logosevens@gmail.com", 
                   subject: "Deploy Frontend Success",
                   body: "Successfully deployd frontend!"
           }
@@ -94,12 +80,8 @@ pipeline {
 
       }
 
-      //==============================================================
-      // ECR ( AWS 권한 필요 )
-      //==============================================================
       stage("Lint Backend"){
         agent {
-          // docker plugin need
           docker {
             image "node:latest"
           }
@@ -115,9 +97,6 @@ pipeline {
         }
       }
 
-      //==============================================================
-      // 
-      //==============================================================
       stage("Test Backend"){
         agent {
           docker {
@@ -136,24 +115,19 @@ pipeline {
         }
       }
 
-      //==============================================================
-      // 
-      //==============================================================
       stage('Build Backend'){
         agent any
         steps {
           echo "Build Backend"
 
-          // PROD : 배표 환경에 대한, 환경 변수
           dir ("./server"){
             sh '''
-            docker build . -t server --build-arg env=${PROD} // server 라는 이름으로 이미지 생성
+            docker build . -t server --build-arg env=${PROD}
             '''
           }
         }
 
         post {
-          // !!!!!build가 실패하면 배포 중단!!!!!!!
           failure {
             error "This pipeline stops here..."
           }
@@ -161,9 +135,6 @@ pipeline {
 
       }
 
-      //==============================================================
-      // 
-      //==============================================================
       stage('Deploy Backend'){
         agent any
 
@@ -172,8 +143,7 @@ pipeline {
 
           dir("./server"){
             sh '''
-            docker rm -f $(docker ps -aq) // docker container 끄기
-            docker run -p 80:80 -d server // docker image 로 container 생성
+            docker run -p 80:80 -d server
             '''
           }
         }
