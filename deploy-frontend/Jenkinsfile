@@ -1,0 +1,46 @@
+pipeline {
+    agent any
+    tools {nodejs "nodejs"}
+    stages {
+        stage ('Workspace Clean') {
+            steps {
+             cleanWs()   
+            }
+        }
+        stage ('git clone') {
+            steps {
+                sh  """
+                    echo ${WORKSPACE}
+                    git clone https://github.com/kimwlsgh33/fa-frontend.git
+                    """
+            }
+        }
+        stage ('npm build') {
+            steps {
+                sh  """
+                    cd fa-frontend
+                    npm install
+                    npm run build
+                    """
+            }
+        }
+        stage ('Ansible Deploy') {
+            steps {
+                script {
+                    MY_KEYPAIR_NAME = "my-ec2-keypair"
+                    MY_APP_PRIVATE_IP = "10.1.1.154" 
+
+                    sh  """
+                        git clone https://github.com/kimwlsgh33/fa-ansible.git 
+                        cd  fa-ansible 
+
+                        sed -i 's/MY_KEYPAIR_NAME/${MY_KEYPAIR_NAME}/g' hosts/hosts
+                        sed -i 's/MY_APP_PRIVATE_IP/${MY_APP_PRIVATE_IP}/g' hosts/hosts
+
+                        ansible-playbook deploy_frontend.yml -i ./hosts/hosts --extra-vars "deploy_hosts=app" 
+                        """
+                }
+            }
+        }
+    }
+}
