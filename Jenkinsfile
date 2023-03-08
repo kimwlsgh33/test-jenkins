@@ -150,7 +150,7 @@ pipeline {
 
         post {
           success {
-            mail  to: "logosevens@gmail.com"
+            mail  to: "logosevens@gmail.com",
                   subject: "Deploy Success",
                   body: "Successfully deployed!"
           }
