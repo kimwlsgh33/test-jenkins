@@ -55,7 +55,7 @@ pipeline {
           echo "Deploying Frontend"
           dir ('./website'){
             sh '''
-            aws s3 sync ./ s3://jenkins-test
+            aws s3 sync ./ s3://jenkins-test-03
             '''
           }
         }
