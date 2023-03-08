@@ -40,16 +40,6 @@ pipeline {
         }
       }
 
-      stage('Only for production'){
-        when {
-          branch 'production' 
-          environment name: 'APP_ENV', value: 'prod'
-          anyOf {
-            environment name: "DEPLOY_TO", value: 'production'
-            environment name: "DEPLOY_TO", value: 'staging'
-          }
-        }
-      }
       stage('Deploy Frontend'){
         steps {
           echo "Deploying Frontend"
